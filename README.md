@@ -16,7 +16,7 @@ Task Management System/
 - ✅ User Authentication (Register, Login, Logout)
 - ✅ JWT-based security with Access & Refresh Tokens
 - ✅ Password hashing with bcrypt
-- ✅ Welcome email for new users (optional)
+- ✅ Welcome email for new users (automatically sent on registration)
 - ✅ Complete Task CRUD operations
 - ✅ Pagination, Filtering, and Search functionality
 - ✅ TypeScript with proper type safety
@@ -117,7 +117,8 @@ JWT_REFRESH_EXPIRES_IN=7d
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 
-# Email Configuration (Optional - for welcome emails)
+# Email Configuration (for welcome emails)
+# Configure these to send welcome emails to new users
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -167,7 +168,8 @@ The frontend will run on `http://localhost:3000`
 2. You'll be redirected to the login page
 3. Click "create a new account" to register
 4. After registration, you'll be logged in automatically
-5. Start creating and managing your tasks!
+5. If email is configured, you'll receive a welcome email in your inbox
+6. Start creating and managing your tasks!
 
 ## Environment Variables
 
@@ -184,8 +186,9 @@ JWT_REFRESH_EXPIRES_IN=7d
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 
-# Email Configuration (Optional - for welcome emails)
-# If not configured, welcome emails will be skipped
+# Email Configuration (for welcome emails)
+# Configure these to send welcome emails to new users upon registration
+# If not configured, the app will work normally but won't send welcome emails
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -197,7 +200,8 @@ SMTP_PASS=your-app-password
 - Replace `username` and `password` with your PostgreSQL credentials
 - JWT secrets should be long, random strings (at least 32 characters)
 - Never commit the `.env` file to version control
-- **Email Configuration (Optional):** 
+- **Email Configuration (for Welcome Emails):** 
+  - When configured, new users will automatically receive a welcome email upon registration
   - For Gmail: Use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password
   - For other providers: Update SMTP_HOST and SMTP_PORT accordingly
   - If email is not configured, the app will work normally but won't send welcome emails
@@ -219,6 +223,7 @@ All authentication endpoints are public (no token required).
 - **POST /auth/register** - Register a new user
   - Body: `{ email, password, name }`
   - Response: `{ accessToken, refreshToken, user }`
+  - Note: Sends a welcome email to the new user (if email is configured)
 
 - **POST /auth/login** - Login user
   - Body: `{ email, password }`
