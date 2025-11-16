@@ -2,6 +2,12 @@
 
 A complete full-stack Task Management System built with Node.js, TypeScript, Prisma, and Next.js.
 
+## 🌐 Live Application
+
+- **Frontend (Vercel):** [https://task-management-system-one-iota.vercel.app](https://task-management-system-one-iota.vercel.app)
+- **Backend API (Render):** [https://task-management-system-21l7.onrender.com](https://task-management-system-21l7.onrender.com)
+- **Backend Health Check:** [https://task-management-system-21l7.onrender.com/health](https://task-management-system-21l7.onrender.com/health)
+
 ## Project Structure
 
 ```
@@ -175,6 +181,8 @@ The frontend will run on `http://localhost:3000`
 
 ### Backend (.env file in backend directory)
 
+#### Local Development
+
 Create a `.env` file in the `backend` directory with the following:
 
 ```env
@@ -196,22 +204,57 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ```
 
+#### Production (Render)
+
+The following environment variables are configured in Render:
+
+```env
+DATABASE_URL="postgresql://postgres:password@host:port/railway?schema=public"
+# Get this from Railway Postgres service → Variables → DATABASE_URL
+
+JWT_ACCESS_SECRET=your_32_character_minimum_random_secret
+JWT_REFRESH_SECRET=your_32_character_minimum_random_secret
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+PORT=3001
+FRONTEND_URL=https://task-management-system-one-iota.vercel.app
+
+# Email Configuration (Optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+```
+
 **Important:**
 - Replace `username` and `password` with your PostgreSQL credentials
 - JWT secrets should be long, random strings (at least 32 characters)
 - Never commit the `.env` file to version control
+- **Production DATABASE_URL:** Get from Railway Postgres service → Variables tab → Copy `DATABASE_URL`
 - **Email Configuration (for Welcome Emails):** 
   - When configured, new users will automatically receive a welcome email upon registration
   - For Gmail: Use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password
   - For other providers: Update SMTP_HOST and SMTP_PORT accordingly
   - If email is not configured, the app will work normally but won't send welcome emails
+  - **Note:** Email sending may timeout in production environments. This is non-critical and doesn't affect registration.
 
 ### Frontend (.env.local file in frontend directory)
+
+#### Local Development
 
 Create a `.env.local` file in the `frontend` directory:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+#### Production (Vercel)
+
+The following environment variable is configured in Vercel:
+
+```env
+NEXT_PUBLIC_API_URL=https://task-management-system-21l7.onrender.com
 ```
 
 ## API Endpoints
@@ -268,6 +311,7 @@ All task endpoints require authentication (Bearer token in Authorization header)
 - Make sure PostgreSQL is running
 - Verify your DATABASE_URL in the backend `.env` file is correct
 - Check that the database `taskmanagement` exists
+- **Production:** Ensure `DATABASE_URL` from Railway is correctly set in Render environment variables
 
 ### Port Already in Use
 - Backend: Change PORT in `backend/.env`
@@ -276,10 +320,32 @@ All task endpoints require authentication (Bearer token in Authorization header)
 ### CORS Errors
 - Make sure FRONTEND_URL in `backend/.env` matches your frontend URL
 - Default is `http://localhost:3000`
+- **Production:** Ensure `FRONTEND_URL` in Render matches your Vercel frontend URL exactly
 
 ### Token Issues
 - Make sure JWT secrets are set in `backend/.env`
 - They should be long, random strings (at least 32 characters)
+
+### Production Deployment Issues
+
+#### Backend 500 Errors
+- **Prisma Migrations:** Ensure migrations are run. Update Render build command to include:
+  ```
+  npm install && npm run prisma:generate && npm run prisma:migrate:deploy && npm run build
+  ```
+- **Database Connection:** Verify `DATABASE_URL` is correctly set in Render environment variables
+- **Check Logs:** View Render service logs for detailed error messages
+
+#### Email Timeout Errors
+- Email sending may timeout in production (non-critical)
+- Registration will still work even if email fails
+- To fix: Use Gmail App Password or switch to a production email service (SendGrid, Mailgun, etc.)
+- To disable: Remove SMTP environment variables from Render
+
+#### Frontend API Connection
+- Verify `NEXT_PUBLIC_API_URL` in Vercel matches your Render backend URL
+- Check browser console for CORS or network errors
+- Ensure backend `FRONTEND_URL` matches your Vercel frontend URL
 
 ## Production Build
 
@@ -296,6 +362,56 @@ cd frontend
 npm run build
 npm start
 ```
+
+## Deployment
+
+### Production URLs
+
+- **Frontend:** [https://task-management-system-one-iota.vercel.app](https://task-management-system-one-iota.vercel.app)
+  - Hosted on Vercel
+  - Framework: Next.js
+  - Auto-deploys from `main` branch
+
+- **Backend API:** [https://task-management-system-21l7.onrender.com](https://task-management-system-21l7.onrender.com)
+  - Hosted on Render
+  - Framework: Node.js + Express
+  - Auto-deploys from `main` branch
+
+- **Database:** PostgreSQL on Railway
+  - Connection string available in Railway Postgres service → Variables → `DATABASE_URL`
+  - Used by backend for data persistence
+
+### Deployment Platforms
+
+#### Frontend (Vercel)
+- **Platform:** [Vercel](https://vercel.com)
+- **Repository:** Connected to GitHub
+- **Build Command:** `npm run build`
+- **Root Directory:** `frontend`
+- **Environment Variables:**
+  - `NEXT_PUBLIC_API_URL` = Backend API URL
+
+#### Backend (Render)
+- **Platform:** [Render](https://render.com)
+- **Repository:** Connected to GitHub
+- **Build Command:** `npm install && npm run prisma:generate && npm run prisma:migrate:deploy && npm run build`
+- **Start Command:** `npm start`
+- **Root Directory:** `backend`
+- **Environment Variables:**
+  - `DATABASE_URL` = PostgreSQL connection string from Railway
+  - `JWT_ACCESS_SECRET` = 32+ character random string
+  - `JWT_REFRESH_SECRET` = 32+ character random string
+  - `JWT_ACCESS_EXPIRES_IN` = `15m`
+  - `JWT_REFRESH_EXPIRES_IN` = `7d`
+  - `PORT` = `3001`
+  - `FRONTEND_URL` = Frontend Vercel URL
+  - `SMTP_*` = Email configuration (optional)
+
+#### Database (Railway)
+- **Platform:** [Railway](https://railway.app)
+- **Service:** PostgreSQL
+- **Connection:** Access via `DATABASE_URL` environment variable
+- **Migrations:** Run automatically during backend deployment via `prisma:migrate:deploy`
 
 ## Technologies Used
 
