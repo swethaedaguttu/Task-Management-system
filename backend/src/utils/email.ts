@@ -10,6 +10,11 @@ const createTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000, // 10 seconds
+    socketTimeout: 10000, // 10 seconds
+    // For Gmail, use OAuth2 or App Password
+    // If using App Password, ensure "Less secure app access" is enabled or use OAuth2
   });
 };
 
@@ -23,6 +28,12 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
     }
 
     const transporter = createTransporter();
+
+    // Verify connection before sending
+    await transporter.verify().catch((error) => {
+      console.warn('SMTP connection verification failed:', error.message);
+      // Continue anyway - sometimes verification fails but sending works
+    });
 
     const mailOptions = {
       from: `"TaskFlow Team" <${process.env.SMTP_USER}>`,
@@ -105,10 +116,21 @@ The TaskFlow Team
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    // Send email with timeout
+    const sendPromise = transporter.sendMail(mailOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Email send timeout')), 15000); // 15 second timeout
+    });
+
+    await Promise.race([sendPromise, timeoutPromise]);
     console.log(`Welcome email sent to ${email}`);
-  } catch (error) {
-    console.error('Error sending welcome email:', error);
+  } catch (error: any) {
+    // Log error but don't throw - email failure shouldn't break registration
+    if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+      console.warn(`Email send timeout for ${email}. This is non-critical and registration will continue.`);
+    } else {
+      console.error('Error sending welcome email:', error.message || error);
+    }
     // Don't throw error - email failure shouldn't break registration
   }
 };
